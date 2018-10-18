@@ -1,0 +1,246 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Product example for Bootstrap</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    
+    <!-- Custom styles for this template -->
+    <link href="content/product.css" rel="stylesheet">
+    <script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4.0.8/stitch.js"></script>
+  </head>
+
+  <body>
+
+    <nav class="site-header py-1">
+      <div class="container d-flex flex-column flex-md-row justify-content-between">
+        <a class="py-2" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="d-block mx-auto"><circle cx="12" cy="12" r="10"></circle><line x1="14.31" y1="8" x2="20.05" y2="17.94"></line><line x1="9.69" y1="8" x2="21.17" y2="8"></line><line x1="7.38" y1="12" x2="13.12" y2="2.06"></line><line x1="9.69" y1="16" x2="3.95" y2="6.06"></line><line x1="14.31" y1="16" x2="2.83" y2="16"></line><line x1="16.62" y1="12" x2="10.88" y2="21.94"></line></svg>
+        </a>
+        <a class="py-2 d-none d-md-inline-block" href="#" id="pageLink" name="pageLink"><i class="fa fa-file"></i> Pages</a>
+      </div>
+    </nav>
+
+    <form id="beagleForm" name="beagleForm">
+      <div class="row">
+        <div class="col-md-8">
+            <textarea id="content" name="content">
+
+            </textarea>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" class="form-control" id="title" placeholder="Getting started with beagles.">
+          </div>
+
+          <div class="form-group">
+              <label for="tags">Tags</label>
+              <input type="text" class="form-control" id="tags" placeholder="go, golang, hugo, development">
+            </div>
+          <div class="form-group">
+            <label for="draft">Draft</label>
+            <select class="form-control" id="draft">
+              <option>false</option>
+              <option>true</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" class="form-control" id="date" />
+          </div>
+          <button type="submit" class="btn btn-secondary">Save</button>
+        </div>
+      </div>
+        
+    </form>
+
+    <footer class="container py-5">
+      
+    </footer>
+    <div class="modal" tabindex="-1" role="dialog" id="pages" name="pages">
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Pages</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <table class="table table-bordered table-striped table-hover table-sm">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>asdf</td>
+                  <td>asdf</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary new-page">New</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script type="text/html" id="tableTemplate" name="tableTemplate">
+        {{#results}}
+        <tr>
+          <td>
+            <a href="#{{_id}}" class="page-link">{{title}}</a>
+          </td>
+          <td></td>
+        </tr>
+        {{/results}}
+      </script>
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/3.0.0/mustache.min.js"></script>
+    <script>
+      var content = null;
+      const client = stitch.Stitch.initializeDefaultAppClient('dogfoodcms-vzyyt');
+      const db = client.getServiceClient(stitch.RemoteMongoClient.factory, 'mongodb-atlas').db('cms');
+      var id = null;
+      var doc = null;
+
+      $(function() {
+        content = new SimpleMDE({
+          element: document.getElementById("content"),
+          spellChecker: false,
+        });
+
+        $("#beagleForm").submit(savePage);
+        $("#pageLink").click(listPages);
+        $("#pages table tbody").on("click", "a.page-link", selectPage);
+        $(".new-page").click(newPage);
+
+        getdoc();
+      });
+
+      function newPage() {
+        id = null;
+        doc = null;
+        $("#pages").modal('hide');
+        window.location.hash = "";
+        getdoc();
+      };
+
+      function selectPage() {
+          $("#pages").modal('hide');
+          var href = $(this).attr("href");
+          window.location.hash = href;
+          getdoc();
+      };
+
+      function getdoc() {
+        if(window.location.hash) {
+          id = window.location.hash.slice(1, 30);
+
+          client.auth.loginWithCredential(new stitch.AnonymousCredential()).then(() => 
+            db.collection('page').find({_id: { "$oid": id}}, { limit: 100}).asArray()
+          ).then(docs => {
+              console.log("Found docs", docs)
+
+              if(docs.length > 0) {
+                doc = docs[0];
+                $("#title").val(doc.title);
+                $("#tags").val(doc.tags);
+                $("#draft").val(doc.draft.toString());
+                $("#date").val(doc.date);
+                content.value(doc.content);
+                console.log(doc);
+              }
+
+          }).catch(err => {
+            console.error(err)
+          });
+        }
+        else {
+          doc = null;
+
+          $("#title").val("");
+          $("#tags").val("");
+          $("#draft").val("");
+          $("#date").val("");
+          content.value("");
+        }
+      };
+
+      function savePage(e) {
+        e.preventDefault();
+        
+        if(doc == null) { doc = {}; }
+        doc.title = $("#title").val();
+        doc.tags = $("#tags").val();
+        doc.draft = $("#draft").val() == "true";
+        doc.date = moment($("#date").val()).toDate();
+        doc.content = content.value();
+
+        // convert tags to array
+        var tags = doc.tags.split(",");
+        doc.tags = [];
+        for(var i = 0; i < tags.length; i++) {
+          doc.tags.push(tags[i].trim());
+        }
+
+        var find = { "title": doc.title };
+        if(id) {
+          find = {"_id": {"$oid": id}};
+          client.auth.loginWithCredential(new stitch.AnonymousCredential()).then(user => {
+            doc.owner_id = client.auth.user.id;
+            db.collection('page').updateOne(find, doc, {upsert:true})
+          });
+        }
+        else {
+          client.auth.loginWithCredential(new stitch.AnonymousCredential()).then(user => {
+            doc.owner_id = client.auth.user.id;
+            db.collection('page').insertOne(doc);
+          });
+        }
+
+        return false;
+      };
+
+      function listPages() {
+        getPages(function(pages) {
+          $("#pages").modal('show');
+          console.log("Found docs", pages)
+
+          var template = $("#tableTemplate").html();
+          var output = Mustache.render(template, { results: pages });
+          $("#pages table tbody").html(output);
+        });
+      }
+      function getPages(results) {
+        client.auth.loginWithCredential(new stitch.AnonymousCredential()).then(() => 
+          db.collection('page').find({}, { limit: 100, sort: { "title": 1 }}).asArray()
+        ).then(docs => {
+          return results(docs);
+        }).catch(err => {
+          console.error(err)
+        });
+      };
+      </script>
+  </body>
+</html>
